@@ -47,11 +47,10 @@ public class Card9_019 extends AbstractRebel {
         GameTextActionId gameTextActionId = GameTextActionId.OTHER_CARD_ACTION_1;
 
         // Check condition(s)
-        // unique not working - using just x-wing for now
-        // TriggerConditions.isPlayingCard(game, effect, playerId, Filters.X_wing)
-        if (GameConditions.isOnceDuringYourPhase(game, self, playerId, gameTextSourceCardId, gameTextActionId, Phase.DEPLOY)
+        if (TriggerConditions.isPlayingCard(game, effect, Filters.and(Filters.unique, Filters.X_wing))
+                && GameConditions.isOnceDuringYourPhase(game, self, playerId, gameTextSourceCardId, gameTextActionId, Phase.DEPLOY)
                 && GameConditions.isAtLocation(game, self, Filters.or(Filters.system, Filters.sector, Filters.docking_bay))){
-            final PhysicalCard cardPlayed = ((RespondablePlayingCardEffect) effect).getCard();
+            final RespondablePlayingCardEffect respondableEffect = (RespondablePlayingCardEffect) effect;
 
             final OptionalGameTextTriggerAction action = new OptionalGameTextTriggerAction(self, gameTextSourceCardId);
             action.setText("Subtract 2 from unique X-wing deploy cost deploying here");
@@ -60,9 +59,9 @@ public class Card9_019 extends AbstractRebel {
                     new OncePerPhaseEffect(action));
             // Perform result(s)
             action.appendEffect(
-                    new AddUntilEndOfCardPlayedModifierEffect(action, cardPlayed,
-                            new DeployCostModifier(cardPlayed, -2),
-                            "Subtracts 2 from deploy cost of " + GameUtils.getCardLink(cardPlayed)));
+                    new AddUntilEndOfCardPlayedModifierEffect(action, respondableEffect.getCard(),
+                            new DeployCostModifier(respondableEffect.getCard(), -2),
+                            "Subtracts 2 from deploy cost of " + GameUtils.getCardLink(respondableEffect.getCard())));
             return Collections.singletonList(action);
         }
         return null;
