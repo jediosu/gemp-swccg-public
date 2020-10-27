@@ -7,10 +7,13 @@ import com.gempukku.swccgo.common.*;
 import com.gempukku.swccgo.filters.Filters;
 import com.gempukku.swccgo.game.PhysicalCard;
 import com.gempukku.swccgo.game.SwccgGame;
-import com.gempukku.swccgo.logic.actions.TopLevelGameTextAction;
-import com.gempukku.swccgo.logic.effects.choose.DeployCardToLocationFromHandEffect;
-import com.gempukku.swccgo.logic.modifiers.AddsPowerToPilotedBySelfModifier;
-import com.gempukku.swccgo.logic.modifiers.Modifier;
+import com.gempukku.swccgo.logic.GameUtils;
+import com.gempukku.swccgo.logic.TriggerConditions;
+import com.gempukku.swccgo.logic.actions.OptionalGameTextTriggerAction;
+import com.gempukku.swccgo.logic.effects.*;
+import com.gempukku.swccgo.logic.modifiers.*;
+import com.gempukku.swccgo.logic.timing.Action;
+import com.gempukku.swccgo.logic.timing.Effect;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -40,24 +43,29 @@ public class Card9_019 extends AbstractRebel {
     }
 
     @Override
-    protected List<TopLevelGameTextAction> getGameTextTopLevelActions(final String playerId, final SwccgGame game, final PhysicalCard self, int gameTextSourceCardId) {
+    protected List<OptionalGameTextTriggerAction> getGameTextOptionalBeforeTriggers(final String playerId, SwccgGame game, final Effect effect, final PhysicalCard self, int gameTextSourceCardId) {
         GameTextActionId gameTextActionId = GameTextActionId.OTHER_CARD_ACTION_1;
 
         // Check condition(s)
+        // unique not working - using just x-wing for now
+        // TriggerConditions.isPlayingCard(game, effect, playerId, Filters.X_wing)
         if (GameConditions.isOnceDuringYourPhase(game, self, playerId, gameTextSourceCardId, gameTextActionId, Phase.DEPLOY)
-                && (GameConditions.isAtLocation(game, self, Filters.or(Filters.system, Filters.sector, Filters.docking_bay)))){
+                && GameConditions.isAtLocation(game, self, Filters.or(Filters.system, Filters.sector, Filters.docking_bay))){
+            final PhysicalCard cardPlayed = ((RespondablePlayingCardEffect) effect).getCard();
 
-            final TopLevelGameTextAction action = new TopLevelGameTextAction(self, gameTextSourceCardId, gameTextActionId);
+            final OptionalGameTextTriggerAction action = new OptionalGameTextTriggerAction(self, gameTextSourceCardId);
             action.setText("Subtract 2 from unique X-wing deploy cost deploying here");
-            action.setActionMsg("Subtract 2 from deploy cost of your unique X-wing deploying here");
             // Update usage limit(s)
             action.appendUsage(
                     new OncePerPhaseEffect(action));
             // Perform result(s)
             action.appendEffect(
-                    new DeployCardToLocationFromHandEffect(action, playerId, Filters.and(Filters.unique, Filters.X_wing), Filters.sameLocation(self), -2));
+                    new AddUntilEndOfCardPlayedModifierEffect(action, cardPlayed,
+                            new DeployCostModifier(cardPlayed, -2),
+                            "Subtracts 2 from deploy cost of " + GameUtils.getCardLink(cardPlayed)));
             return Collections.singletonList(action);
         }
         return null;
     }
 }
+
