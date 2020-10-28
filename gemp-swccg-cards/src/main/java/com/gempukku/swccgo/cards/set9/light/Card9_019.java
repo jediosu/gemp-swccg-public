@@ -2,6 +2,7 @@ package com.gempukku.swccgo.cards.set9.light;
 
 import com.gempukku.swccgo.cards.AbstractRebel;
 import com.gempukku.swccgo.cards.GameConditions;
+import com.gempukku.swccgo.cards.effects.usage.OncePerGameEffect;
 import com.gempukku.swccgo.cards.effects.usage.OncePerPhaseEffect;
 import com.gempukku.swccgo.common.*;
 import com.gempukku.swccgo.filters.Filter;
@@ -10,6 +11,7 @@ import com.gempukku.swccgo.game.PhysicalCard;
 import com.gempukku.swccgo.game.SwccgGame;
 import com.gempukku.swccgo.logic.GameUtils;
 import com.gempukku.swccgo.logic.TriggerConditions;
+import com.gempukku.swccgo.logic.actions.CancelCardActionBuilder;
 import com.gempukku.swccgo.logic.actions.OptionalGameTextTriggerAction;
 import com.gempukku.swccgo.logic.actions.RequiredGameTextTriggerAction;
 import com.gempukku.swccgo.logic.effects.*;
@@ -32,7 +34,7 @@ import java.util.List;
 
 public class Card9_019 extends AbstractRebel {
     public Card9_019(){
-        super(Side.LIGHT, 3, 2, 2, 2, 4, Title.Keir_Santage, Uniqueness.UNIQUE);
+        super(Side.LIGHT, 3, 2, 2, 2, 4, "Keir Santage", Uniqueness.UNIQUE);
         setLore("Rescued from an Imperial detention center by Wedge Antilles. Rogue Squadron veteran. Assigned to Red Squadron at the Battle of Endor. Coordinates with Rebellion procurement.");
         setGameText("Adds 2 to power of anything he pilots. When at a system, sector or docking bay, once during each of your deploy phases, may subtract 2 from deploy cost of your unique (•) X-wing deploying here.");
         addIcons(Icon.DEATH_STAR_II, Icon.PILOT);
@@ -48,12 +50,30 @@ public class Card9_019 extends AbstractRebel {
 
     @Override
     protected List<OptionalGameTextTriggerAction> getGameTextOptionalBeforeTriggers(final String playerId, SwccgGame game, Effect effect, final PhysicalCard self, int gameTextSourceCardId) {
+        GameTextActionId gameTextActionId = GameTextActionId.KIR_KANOS__CANCEL_INTERRUPT;
+
+        // Check condition(s)
+        if (TriggerConditions.isPlayingCard(game, effect, Filters.Interrupt)) {
+
+            final OptionalGameTextTriggerAction action = new OptionalGameTextTriggerAction(self, gameTextSourceCardId, gameTextActionId);
+            // Build action using common utility
+            CancelCardActionBuilder.buildCancelCardBeingPlayedAction(action, effect);
+            action.appendUsage(new OncePerGameEffect(action));
+            return Collections.singletonList(action);
+        }
+        return null;
+    }
+
+    /**
+    @Override
+    protected List<OptionalGameTextTriggerAction> getGameTextOptionalBeforeTriggers(final String playerId, final SwccgGame game, Effect effect, final PhysicalCard self, int gameTextSourceCardId) {
         GameTextActionId gameTextActionId = GameTextActionId.OTHER_CARD_ACTION_1;
 
         // Check condition(s)
-        if (TriggerConditions.isPlayingCard(game, effect, Filters.Interrupt)
+        if (TriggerConditions.isPlayingCard(game, effect, Filters.character)
                 && GameConditions.isOnceDuringYourPhase(game, self, playerId, gameTextSourceCardId, gameTextActionId, Phase.DEPLOY)
                 && GameConditions.isAtLocation(game, self, Filters.or(Filters.system, Filters.sector, Filters.docking_bay))) {
+            final PhysicalCard playedCard = ((RespondablePlayingCardEffect) effect).getCard();
 
             final OptionalGameTextTriggerAction action = new OptionalGameTextTriggerAction(self, gameTextSourceCardId, gameTextActionId);
             action.setText("Subtract 2 from unique X-wing deploy cost deploying here");
@@ -61,16 +81,14 @@ public class Card9_019 extends AbstractRebel {
             action.appendUsage(
                     new OncePerPhaseEffect(action));
             // Perform result(s)
-            /** action.appendEffect(
-                    new AddUntilEndOfCardPlayedModifierEffect(action, respondableEffect.getCard(),
-                            new DeployCostToLocationModifier(respondableEffect.getCard(), -2, Filters.sameLocation(self)),
-                            "Subtracts 2 from deploy cost of " + GameUtils.getCardLink(respondableEffect.getCard()))); */
             action.appendEffect(
-                    new DoNothingEffect(action));
-            action.setActionMsg("subtracts 2 from unique X-wing deploy cost deploying here");
+                    new AddUntilEndOfCardPlayedModifierEffect(action, playedCard,
+                            new DeployCostToLocationModifier(playedCard, -2, Filters.sameLocation(self)),
+                            "Subtracts 2 from deploy cost of " + GameUtils.getCardLink(playedCard) + "deploying here"));
             return Collections.singletonList(action);
         }
         return null;
     }
+    */
 }
 
