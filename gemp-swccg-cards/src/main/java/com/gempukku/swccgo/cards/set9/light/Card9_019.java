@@ -4,16 +4,20 @@ import com.gempukku.swccgo.cards.AbstractRebel;
 import com.gempukku.swccgo.cards.GameConditions;
 import com.gempukku.swccgo.cards.effects.usage.OncePerPhaseEffect;
 import com.gempukku.swccgo.common.*;
+import com.gempukku.swccgo.filters.Filter;
 import com.gempukku.swccgo.filters.Filters;
 import com.gempukku.swccgo.game.PhysicalCard;
 import com.gempukku.swccgo.game.SwccgGame;
 import com.gempukku.swccgo.logic.GameUtils;
 import com.gempukku.swccgo.logic.TriggerConditions;
 import com.gempukku.swccgo.logic.actions.OptionalGameTextTriggerAction;
+import com.gempukku.swccgo.logic.actions.RequiredGameTextTriggerAction;
 import com.gempukku.swccgo.logic.effects.*;
 import com.gempukku.swccgo.logic.modifiers.*;
 import com.gempukku.swccgo.logic.timing.Action;
 import com.gempukku.swccgo.logic.timing.Effect;
+import com.gempukku.swccgo.logic.timing.EffectResult;
+import com.gempukku.swccgo.logic.timing.results.PlayCardResult;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -43,25 +47,27 @@ public class Card9_019 extends AbstractRebel {
     }
 
     @Override
-    protected List<OptionalGameTextTriggerAction> getGameTextOptionalBeforeTriggers(final String playerId, SwccgGame game, final Effect effect, final PhysicalCard self, int gameTextSourceCardId) {
+    protected List<OptionalGameTextTriggerAction> getGameTextOptionalBeforeTriggers(final String playerId, SwccgGame game, Effect effect, final PhysicalCard self, int gameTextSourceCardId) {
         GameTextActionId gameTextActionId = GameTextActionId.OTHER_CARD_ACTION_1;
 
         // Check condition(s)
-        if (TriggerConditions.isPlayingCard(game, effect, Filters.and(Filters.unique, Filters.X_wing))
+        if (TriggerConditions.isPlayingCard(game, effect, Filters.Interrupt)
                 && GameConditions.isOnceDuringYourPhase(game, self, playerId, gameTextSourceCardId, gameTextActionId, Phase.DEPLOY)
-                && GameConditions.isAtLocation(game, self, Filters.or(Filters.system, Filters.sector, Filters.docking_bay))){
-            final RespondablePlayingCardEffect respondableEffect = (RespondablePlayingCardEffect) effect;
+                && GameConditions.isAtLocation(game, self, Filters.or(Filters.system, Filters.sector, Filters.docking_bay))) {
 
-            final OptionalGameTextTriggerAction action = new OptionalGameTextTriggerAction(self, gameTextSourceCardId);
+            final OptionalGameTextTriggerAction action = new OptionalGameTextTriggerAction(self, gameTextSourceCardId, gameTextActionId);
             action.setText("Subtract 2 from unique X-wing deploy cost deploying here");
             // Update usage limit(s)
             action.appendUsage(
                     new OncePerPhaseEffect(action));
             // Perform result(s)
-            action.appendEffect(
+            /** action.appendEffect(
                     new AddUntilEndOfCardPlayedModifierEffect(action, respondableEffect.getCard(),
-                            new DeployCostModifier(respondableEffect.getCard(), -2),
-                            "Subtracts 2 from deploy cost of " + GameUtils.getCardLink(respondableEffect.getCard())));
+                            new DeployCostToLocationModifier(respondableEffect.getCard(), -2, Filters.sameLocation(self)),
+                            "Subtracts 2 from deploy cost of " + GameUtils.getCardLink(respondableEffect.getCard()))); */
+            action.appendEffect(
+                    new DoNothingEffect(action));
+            action.setActionMsg("subtracts 2 from unique X-wing deploy cost deploying here");
             return Collections.singletonList(action);
         }
         return null;
