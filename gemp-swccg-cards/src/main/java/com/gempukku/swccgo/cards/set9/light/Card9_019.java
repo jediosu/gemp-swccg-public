@@ -48,47 +48,33 @@ public class Card9_019 extends AbstractRebel {
         return modifiers;
     }
 
-    @Override
-    protected List<OptionalGameTextTriggerAction> getGameTextOptionalBeforeTriggers(final String playerId, SwccgGame game, Effect effect, final PhysicalCard self, int gameTextSourceCardId) {
-        GameTextActionId gameTextActionId = GameTextActionId.KIR_KANOS__CANCEL_INTERRUPT;
 
-        // Check condition(s)
-        if (TriggerConditions.isPlayingCard(game, effect, Filters.Interrupt)) {
-
-            final OptionalGameTextTriggerAction action = new OptionalGameTextTriggerAction(self, gameTextSourceCardId, gameTextActionId);
-            // Build action using common utility
-            CancelCardActionBuilder.buildCancelCardBeingPlayedAction(action, effect);
-            action.appendUsage(new OncePerGameEffect(action));
-            return Collections.singletonList(action);
-        }
-        return null;
-    }
-
-    /**
     @Override
     protected List<OptionalGameTextTriggerAction> getGameTextOptionalBeforeTriggers(final String playerId, final SwccgGame game, Effect effect, final PhysicalCard self, int gameTextSourceCardId) {
         GameTextActionId gameTextActionId = GameTextActionId.OTHER_CARD_ACTION_1;
 
         // Check condition(s)
-        if (TriggerConditions.isPlayingCard(game, effect, Filters.character)
-                && GameConditions.isOnceDuringYourPhase(game, self, playerId, gameTextSourceCardId, gameTextActionId, Phase.DEPLOY)
+        if (TriggerConditions.isPlayingCard(game, effect, Filters.Interrupt)
+                &&GameConditions.isOnceDuringYourPhase(game, self, playerId, gameTextSourceCardId, gameTextActionId, Phase.DEPLOY)
                 && GameConditions.isAtLocation(game, self, Filters.or(Filters.system, Filters.sector, Filters.docking_bay))) {
-            final PhysicalCard playedCard = ((RespondablePlayingCardEffect) effect).getCard();
+            //final PhysicalCard playedCard = ((UseForceEffect) effect).getCanceledByCard();
 
             final OptionalGameTextTriggerAction action = new OptionalGameTextTriggerAction(self, gameTextSourceCardId, gameTextActionId);
             action.setText("Subtract 2 from unique X-wing deploy cost deploying here");
             // Update usage limit(s)
             action.appendUsage(
                     new OncePerPhaseEffect(action));
+            /**
             // Perform result(s)
             action.appendEffect(
                     new AddUntilEndOfCardPlayedModifierEffect(action, playedCard,
                             new DeployCostToLocationModifier(playedCard, -2, Filters.sameLocation(self)),
                             "Subtracts 2 from deploy cost of " + GameUtils.getCardLink(playedCard) + "deploying here"));
+             */
             return Collections.singletonList(action);
         }
         return null;
     }
-    */
+
 }
 
